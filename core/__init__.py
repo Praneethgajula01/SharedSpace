@@ -1,0 +1,2 @@
+# SharedSpace Core Package
+

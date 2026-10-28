@@ -1,0 +1,25 @@
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Databases
+*.db
+*.sqlite3
+
+# Environment variables & secrets
+.env
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
