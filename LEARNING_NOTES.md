@@ -31,3 +31,8 @@
 - Purchase intervals are strictly positive and right-skewed; modeling them with a Normal distribution risks generating impossible negative intervals.
 - The Gamma distribution $\text{Gamma}(k, \theta)$ maps naturally from mean $\mu$ and standard deviation $\sigma$ via shape $k = (\mu/\sigma)^2$ and scale $\theta = \sigma^2 / \mu$.
 - The simulator allows us to configure synthetic ground-truth parameters ($\mu_{\text{true}}, \sigma_{\text{true}}$) alongside biased human declarations ($\mu_{\text{prior}}$), providing the benchmark to test Bayesian updating and survival curves.
+
+## Step 7: Simulation Dynamics — Drift, Seasonality & User Feedback
+- Real habits drift over time: we model regime shifts (e.g. exam periods) where the true mean interval shrinks by a drift factor (e.g. from 3.0 to 1.8 days).
+- Weekend multipliers account for weekly acceleration in hostel grocery consumption.
+- Simulated human response behavior follows a logistic sigmoid $P(\text{depleted}) = \sigma(\beta \cdot \frac{\tau - \mu}{\mu})$, transitioning smoothly from rejection when asked too early to enthusiastic acceptance when asked when stock is actually empty.

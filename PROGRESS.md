@@ -11,7 +11,7 @@
 
 ### Simulation & Synthetic Data
 - [x] **Step 6: Synthetic Gang & Purchase Simulator** (`core/simulator.py`)
-- [ ] **Step 7: Simulating Noise, Wrong Priors, Drift & Responses**
+- [x] **Step 7: Simulating Noise, Wrong Priors, Drift & Responses** (`core/simulation_dynamics.py`)
 
 ### Need Model (Probability & Survival)
 - [ ] **Step 8: Baseline Heuristics** (Declared schedule & rolling averages)
