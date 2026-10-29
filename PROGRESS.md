@@ -4,7 +4,7 @@
 
 ### Foundation & Data Layer
 - [x] **Step 1: Environment & Project Scaffolding** (Repo setup, dependencies, structure)
-- [ ] **Step 2: Database Engine & Session Management** (`core/db.py`)
+- [x] **Step 2: Database Engine & Session Management** (`core/db.py`)
 - [ ] **Step 3: Core Relational Schema** (Gangs, Users, Memberships, Items in `core/db.py` & `core/gangs.py`)
 - [ ] **Step 4: Request State Machine** (`core/requests.py`)
 - [ ] **Step 5: Foundation Integration Tests** (`tests/test_foundation.py`)
