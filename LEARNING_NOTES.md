@@ -21,3 +21,8 @@
 - The state transition operates under a "first decisive response wins" rule: once any roommate accepts, the request resolves and cannot be re-answered.
 - Every response (YES, NO, SNOOZE) is permanently recorded in `request_responses` to serve as labeled ground truth for training the user response model $P(\text{Yes} \mid \text{features})$.
 - Stale unattended requests automatically expire after a timeout window (e.g. 24h), capturing the implicit "ignored" signal.
+
+## Step 5: Foundation Integration Tests
+- In-memory SQLite fixtures (`sqlite:///:memory:`) provide isolated test runs with zero disk writes, fast execution, and zero cross-test pollution.
+- Automated tests verify relational constraints (e.g., unique gang memberships), domain validations (positive intervals), and state machine locking.
+- Explicit assertion on empirical inter-purchase intervals ensures that $\Delta t$ can be reliably computed from purchase timestamps.

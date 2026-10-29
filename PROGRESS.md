@@ -7,7 +7,7 @@
 - [x] **Step 2: Database Engine & Session Management** (`core/db.py`)
 - [x] **Step 3: Core Relational Schema** (Gangs, Users, Memberships, Items in `core/db.py` & `core/gangs.py`)
 - [x] **Step 4: Request State Machine** (`core/requests.py`)
-- [ ] **Step 5: Foundation Integration Tests** (`tests/test_foundation.py`)
+- [x] **Step 5: Foundation Integration Tests** (`tests/test_foundation.py`)
 
 ### Simulation & Synthetic Data
 - [ ] **Step 6: Synthetic Gang & Purchase Simulator** (`core/simulator.py`)
