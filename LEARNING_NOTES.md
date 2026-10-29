@@ -9,3 +9,9 @@
 - SQLAlchemy translates Python objects to SQL commands, allowing our codebase to switch between SQLite and PostgreSQL without code changes.
 - In SQLite, foreign keys are turned off by default; we enable them using an engine connect listener with `PRAGMA foreign_keys=ON`.
 - Context managers (`with get_db_session() as session:`) guarantee that database transactions commit on success, roll back on errors, and always close cleanly.
+
+## Step 3: Core Relational Schema & Interval Tracking
+- Users and Gangs share a many-to-many relationship via a `memberships` join table with a unique `(gang_id, user_id)` constraint.
+- Each `Item` holds a `declared_interval_days` float, representing the human's prior belief of how frequently they consume it.
+- `PurchaseEvent` records the ground-truth timestamps whenever an item is bought; subtracting consecutive purchase timestamps yields the empirical random variable $T$ (inter-purchase interval).
+- Setting `expire_on_commit=False` prevents `DetachedInstanceError` when accessing object attributes outside an active transaction.
