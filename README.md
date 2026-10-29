@@ -110,7 +110,7 @@ sharedspace/
 ### Setup Environment
 ```bash
 # Clone the repository
-git clone <YOUR_REPO_URL>
+git clone https://github.com/Praneethgajula01/SharedSpace.git
 cd SharedSpace
 
 # Create virtual environment
