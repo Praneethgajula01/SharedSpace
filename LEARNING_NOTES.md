@@ -15,3 +15,9 @@
 - Each `Item` holds a `declared_interval_days` float, representing the human's prior belief of how frequently they consume it.
 - `PurchaseEvent` records the ground-truth timestamps whenever an item is bought; subtracting consecutive purchase timestamps yields the empirical random variable $T$ (inter-purchase interval).
 - Setting `expire_on_commit=False` prevents `DetachedInstanceError` when accessing object attributes outside an active transaction.
+
+## Step 4: Request State Machine & Feedback Loop
+- Replenishment alerts follow a state machine: `PENDING` transitions to `ACCEPTED`, `REJECTED`, `SNOOZED`, or `EXPIRED`.
+- The state transition operates under a "first decisive response wins" rule: once any roommate accepts, the request resolves and cannot be re-answered.
+- Every response (YES, NO, SNOOZE) is permanently recorded in `request_responses` to serve as labeled ground truth for training the user response model $P(\text{Yes} \mid \text{features})$.
+- Stale unattended requests automatically expire after a timeout window (e.g. 24h), capturing the implicit "ignored" signal.

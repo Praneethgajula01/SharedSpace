@@ -3,6 +3,7 @@ Database configuration, session management, and relational ORM schema for Shared
 Supports both SQLite (local dev) and PostgreSQL (production) seamlessly via SQLAlchemy.
 """
 import os
+import enum
 from datetime import datetime
 from contextlib import contextmanager
 from typing import Generator
@@ -153,6 +154,65 @@ class PurchaseEvent(Base):
 
     def __repr__(self) -> str:
         return f"<PurchaseEvent(item_id={self.item_id}, purchased_at='{self.purchased_at}', price={self.price})>"
+
+
+class RequestStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    SNOOZED = "SNOOZED"
+    EXPIRED = "EXPIRED"
+
+
+class UserAction(str, enum.Enum):
+    YES = "YES"
+    NO = "NO"
+    SNOOZE = "SNOOZE"
+
+
+class PurchaseRequest(Base):
+    """
+    A proposed replenishment request generated when P(need) crosses the decision threshold.
+    Transitions through: PENDING -> ACCEPTED | REJECTED | SNOOZED | EXPIRED.
+    """
+    __tablename__ = "purchase_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(Integer, ForeignKey("items.id", ondelete="CASCADE"), nullable=False, index=True)
+    gang_id = Column(Integer, ForeignKey("gangs.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(20), default=RequestStatus.PENDING.value, nullable=False, index=True)
+    p_need_at_creation = Column(Float, nullable=False, default=0.0)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    resolved_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    item = relationship("Item")
+    gang = relationship("Gang")
+    responses = relationship("RequestResponse", back_populates="request", cascade="all, delete-orphan")
+
+    def __repr__(self) -> str:
+        return f"<PurchaseRequest(id={self.id}, item_id={self.item_id}, status='{self.status}', p_need={self.p_need_at_creation:.2f})>"
+
+
+class RequestResponse(Base):
+    """
+    Individual response from a gang member to a PurchaseRequest.
+    Stores the user feedback used to train the response model P(Yes | features).
+    """
+    __tablename__ = "request_responses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    request_id = Column(Integer, ForeignKey("purchase_requests.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    action = Column(String(20), nullable=False)  # YES, NO, SNOOZE
+    responded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    request = relationship("PurchaseRequest", back_populates="responses")
+    user = relationship("User")
+
+    def __repr__(self) -> str:
+        return f"<RequestResponse(request_id={self.request_id}, user_id={self.user_id}, action='{self.action}')>"
 
 
 # ---------------------------------------------------------
