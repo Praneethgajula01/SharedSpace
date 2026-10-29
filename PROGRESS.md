@@ -10,7 +10,7 @@
 - [x] **Step 5: Foundation Integration Tests** (`tests/test_foundation.py`)
 
 ### Simulation & Synthetic Data
-- [ ] **Step 6: Synthetic Gang & Purchase Simulator** (`core/simulator.py`)
+- [x] **Step 6: Synthetic Gang & Purchase Simulator** (`core/simulator.py`)
 - [ ] **Step 7: Simulating Noise, Wrong Priors, Drift & Responses**
 
 ### Need Model (Probability & Survival)

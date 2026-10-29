@@ -26,3 +26,8 @@
 - In-memory SQLite fixtures (`sqlite:///:memory:`) provide isolated test runs with zero disk writes, fast execution, and zero cross-test pollution.
 - Automated tests verify relational constraints (e.g., unique gang memberships), domain validations (positive intervals), and state machine locking.
 - Explicit assertion on empirical inter-purchase intervals ensures that $\Delta t$ can be reliably computed from purchase timestamps.
+
+## Step 6: Synthetic Purchase Simulator & Gamma Interval Modeling
+- Purchase intervals are strictly positive and right-skewed; modeling them with a Normal distribution risks generating impossible negative intervals.
+- The Gamma distribution $\text{Gamma}(k, \theta)$ maps naturally from mean $\mu$ and standard deviation $\sigma$ via shape $k = (\mu/\sigma)^2$ and scale $\theta = \sigma^2 / \mu$.
+- The simulator allows us to configure synthetic ground-truth parameters ($\mu_{\text{true}}, \sigma_{\text{true}}$) alongside biased human declarations ($\mu_{\text{prior}}$), providing the benchmark to test Bayesian updating and survival curves.
