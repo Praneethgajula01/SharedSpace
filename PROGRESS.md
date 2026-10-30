@@ -14,7 +14,7 @@
 - [x] **Step 7: Simulating Noise, Wrong Priors, Drift & Responses** (`core/simulation_dynamics.py`)
 
 ### Need Model (Probability & Survival)
-- [ ] **Step 8: Baseline Heuristics** (Declared schedule & rolling averages)
+- [x] **Step 8: Baseline Heuristics** (Declared schedule & rolling averages)
 - [ ] **Step 9: Bayesian Interval Model** (Normal-Inverse-Gamma on log-intervals)
 - [ ] **Step 10: Survival Analysis Model** (Weibull hazard & open interval censoring)
 - [ ] **Step 11: Calibration & Evaluation** (Brier score, reliability curves)

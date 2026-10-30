@@ -36,3 +36,8 @@
 - Real habits drift over time: we model regime shifts (e.g. exam periods) where the true mean interval shrinks by a drift factor (e.g. from 3.0 to 1.8 days).
 - Weekend multipliers account for weekly acceleration in hostel grocery consumption.
 - Simulated human response behavior follows a logistic sigmoid $P(\text{depleted}) = \sigma(\beta \cdot \frac{\tau - \mu}{\mu})$, transitioning smoothly from rejection when asked too early to enthusiastic acceptance when asked when stock is actually empty.
+
+## Step 8: Baseline Need Heuristics
+- Heuristic baselines form the benchmark against which Bayesian and survival models are evaluated.
+- **Declared Schedule Baseline**: $P_{\text{declared}}(\text{need}) = \min(1.0, \frac{\Delta t}{D})$. It reflects user expectations but cannot adapt when humans misjudge consumption.
+- **Rolling Moving Average Baseline**: $P_{\text{rolling}}(\text{need}) = \min(1.0, \frac{\Delta t}{\bar{T}})$. Uses the empirical mean of the last $k$ completed intervals, falling back to $D$ when history is empty.
