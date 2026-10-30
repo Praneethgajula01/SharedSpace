@@ -78,3 +78,9 @@
 - We frame threshold selection as a Multi-Armed Bandit over discrete threshold arms $\tau \in \{0.20, 0.35, 0.50, 0.65, 0.80\}$.
 - **Thompson Sampling**: For each candidate arm $k$, we draw a random sample $\theta_k \sim \text{Beta}(\alpha_k, \beta_k)$ from its posterior acceptance distribution and select the arm with the highest sample.
 - If roommates accept an alert, the chosen arm gains a success ($\alpha \leftarrow \alpha + 1$); if rejected or ignored, it records a failure ($\beta \leftarrow \beta + 1$). The bandit naturally explores less certain arms while heavily exploiting the highest-acceptance threshold.
+
+## Step 15: Habit Drift Detection (Two-Sided CUSUM Filter)
+- In real shared flats, consumption is non-stationary: exam months double coffee consumption, vacations pause it, and changing flatmates alters demand permanently.
+- The **Two-Sided Page's CUSUM (Cumulative Sum)** chart accumulates normalized deviations $z_t = \frac{x_t - \mu_0}{\sigma_0}$ minus an allowance slack $k = 0.5$.
+- Small random fluctuations stay near zero; persistent mean shifts cause the cumulative sum to ramp up linearly until it breaches boundary $h = 4.0$.
+- Detects acceleration ($S_{\text{pos}} \ge h$) or slowdown ($S_{\text{neg}} \ge h$) within 2–3 purchases, triggering an automatic baseline adaptation.
