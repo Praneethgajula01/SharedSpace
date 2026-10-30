@@ -16,7 +16,7 @@
 ### Need Model (Probability & Survival)
 - [x] **Step 8: Baseline Heuristics** (Declared schedule & rolling averages)
 - [x] **Step 9: Bayesian Interval Model** (Normal-Inverse-Gamma on log-intervals)
-- [ ] **Step 10: Survival Analysis Model** (Weibull hazard & open interval censoring)
+- [x] **Step 10: Survival Analysis Model** (Weibull hazard & open interval censoring)
 - [ ] **Step 11: Calibration & Evaluation** (Brier score, reliability curves)
 
 ### Decision & Economics

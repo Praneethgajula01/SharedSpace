@@ -47,3 +47,9 @@
 - The human's declared frequency initializes the prior mean $\mu_0 = \ln(D)$, while $\kappa_0$ acts as pseudo-observations (prior confidence).
 - As purchases arrive, closed-form conjugate updates smoothly shift the posterior mean from the prior belief toward empirical reality.
 - The posterior predictive distribution for a future log-interval follows a Student's $t$-distribution, giving an exact closed-form CDF for $P(\text{need now}) = F_t(\ln(\Delta t))$.
+
+## Step 10: Survival Analysis & Right-Censoring (Weibull Model)
+- Unlike completed historical intervals where purchases occurred ($E=1$), the current elapsed time since the last purchase is **right-censored** ($E=0$): we know the item has survived *at least* $\Delta t$ days without running out.
+- The Weibull survival function $S(t) = P(T > t) = \exp(-(t/\lambda)^\rho)$ captures changing hazard rates over time ($\rho > 1$ represents "wear-out" or ongoing depletion).
+- The conditional probability of replenishment in the upcoming time window $\Delta t_{\text{window}}$ given survival up to time $t$ is:
+  $$P(T \le t + \Delta t_{\text{window}} \mid T > t) = 1 - \frac{S(t + \Delta t_{\text{window}})}{S(t)}$$
