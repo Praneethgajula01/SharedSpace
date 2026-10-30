@@ -26,7 +26,7 @@
 - [x] **Step 15: Habit Drift Detection** (CUSUM filter)
 
 ### Application & Workflow
-- [ ] **Step 16: Mock Booking API & Expense Splitting** (`core/booking.py`, `core/expenses.py`)
+- [x] **Step 16: Mock Booking API & Expense Splitting** (`core/booking.py`, `core/expenses.py`)
 - [ ] **Step 17: Interactive Streamlit UI** (Inbox, gang dashboard, item triggers)
 - [ ] **Step 18: Visualizations & Analytics** (Survival curves, drift monitor, split ledger)
 - [ ] **Step 19: Comprehensive Testing & Final Polish**

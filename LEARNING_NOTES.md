@@ -84,3 +84,8 @@
 - The **Two-Sided Page's CUSUM (Cumulative Sum)** chart accumulates normalized deviations $z_t = \frac{x_t - \mu_0}{\sigma_0}$ minus an allowance slack $k = 0.5$.
 - Small random fluctuations stay near zero; persistent mean shifts cause the cumulative sum to ramp up linearly until it breaches boundary $h = 4.0$.
 - Detects acceleration ($S_{\text{pos}} \ge h$) or slowdown ($S_{\text{neg}} \ge h$) within 2–3 purchases, triggering an automatic baseline adaptation.
+
+## Step 16: Mock Booking API & Expense Splitting Ledger
+- Once a purchase request is accepted by any roommate, the system mocks an instant order with an external delivery service (Blinkit/Zepto), simulating order IDs, delivery windows, and small price variations.
+- Order costs are split equally across all gang members, maintaining a running debt ledger.
+- **Debt Simplification Algorithm**: Resolves multi-party IOUs into minimal bilateral payments so roommates settle balances cleanly (e.g. Rohan owes Rs 50 total $\implies$ Rohan pays Arjun Rs 40 and Kabir Rs 10).
