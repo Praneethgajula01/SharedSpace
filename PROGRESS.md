@@ -20,7 +20,7 @@
 - [x] **Step 11: Calibration & Evaluation** (Brier score, reliability curves)
 
 ### Decision & Economics
-- [ ] **Step 12: Response Probability Model** (Beta-Binomial & logistic regression)
+- [x] **Step 12: Response Probability Model** (Beta-Binomial & logistic regression)
 - [ ] **Step 13: Cost-Benefit Decision Rule** (Threshold $\tau = \frac{\text{annoyance}}{\text{annoyance} + \text{benefit}}$)
 - [ ] **Step 14: Dynamic Tuning & Bandit Exploration** (Thompson sampling)
 - [ ] **Step 15: Habit Drift Detection** (CUSUM filter)

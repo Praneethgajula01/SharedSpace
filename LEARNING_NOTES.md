@@ -60,3 +60,8 @@
 - In our sequential walk-forward backtest (where humans declared $2.0\text{ days}$ but true consumption was $3.5\text{ days}$):
   - Declared baseline performed poorly ($\text{BS} = 0.2692$) because it constantly triggered prematurely.
   - Bayesian NIG achieved the highest predictive accuracy ($\text{BS} = 0.0535$) by rapidly correcting the human bias.
+
+## Step 12: User Acceptance Modeling — Beta-Binomial & Logistic Regression
+- Even if an item is depleted, a roommate might reject or ignore an alert depending on individual habits, timing, and notification fatigue.
+- We model individual responsiveness using a conjugate **Beta-Binomial** prior $\theta \sim \text{Beta}(\alpha, \beta)$ with expectation $E[\theta] = \frac{\alpha}{\alpha + \beta}$, tracking per-user agreement rates.
+- Multi-feature context ($P(\text{need})$, individual historical responsiveness, normalized hour of day) is combined using **Logistic Regression** to estimate $P(\text{Yes} \mid \text{features})$, with a cold-start heuristic fallback before sufficient data is collected.
