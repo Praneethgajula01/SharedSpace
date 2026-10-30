@@ -41,3 +41,9 @@
 - Heuristic baselines form the benchmark against which Bayesian and survival models are evaluated.
 - **Declared Schedule Baseline**: $P_{\text{declared}}(\text{need}) = \min(1.0, \frac{\Delta t}{D})$. It reflects user expectations but cannot adapt when humans misjudge consumption.
 - **Rolling Moving Average Baseline**: $P_{\text{rolling}}(\text{need}) = \min(1.0, \frac{\Delta t}{\bar{T}})$. Uses the empirical mean of the last $k$ completed intervals, falling back to $D$ when history is empty.
+
+## Step 9: Bayesian Interval Model (Normal-Inverse-Gamma on Log-Intervals)
+- Taking $Y = \ln(T)$ maps positive intervals into $(-\infty, \infty)$, where the Normal distribution and its conjugate Normal-Inverse-Gamma (NIG) prior apply.
+- The human's declared frequency initializes the prior mean $\mu_0 = \ln(D)$, while $\kappa_0$ acts as pseudo-observations (prior confidence).
+- As purchases arrive, closed-form conjugate updates smoothly shift the posterior mean from the prior belief toward empirical reality.
+- The posterior predictive distribution for a future log-interval follows a Student's $t$-distribution, giving an exact closed-form CDF for $P(\text{need now}) = F_t(\ln(\Delta t))$.
