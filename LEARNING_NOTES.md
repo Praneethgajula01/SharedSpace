@@ -65,3 +65,10 @@
 - Even if an item is depleted, a roommate might reject or ignore an alert depending on individual habits, timing, and notification fatigue.
 - We model individual responsiveness using a conjugate **Beta-Binomial** prior $\theta \sim \text{Beta}(\alpha, \beta)$ with expectation $E[\theta] = \frac{\alpha}{\alpha + \beta}$, tracking per-user agreement rates.
 - Multi-feature context ($P(\text{need})$, individual historical responsiveness, normalized hour of day) is combined using **Logistic Regression** to estimate $P(\text{Yes} \mid \text{features})$, with a cold-start heuristic fallback before sufficient data is collected.
+
+## Step 13: Cost-Benefit Decision Rule & Alert Gating
+- Ad-hoc alert thresholds (like guessing $0.50$ or $0.70$) lead to bad user experiences. We formulate alert triggering as expected utility maximization:
+  $$E[U] = P(\text{need}) \cdot \text{Benefit} - (1 - P(\text{need})) \cdot \text{Annoyance} > 0$$
+  $$\implies \tau^* = \frac{\text{Annoyance}}{\text{Annoyance} + \text{Benefit}}$$
+- High-benefit critical items (e.g. drinking water, $\tau^* = 0.25$) trigger earlier; high-annoyance non-urgent items require higher certainty ($\tau^* = 0.80$).
+- Cooldown windows prevent notification fatigue by suppressing repeated alerts within a configured window (e.g., 6 hours) after a recent prompt.
