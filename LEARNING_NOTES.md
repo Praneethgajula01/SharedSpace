@@ -53,3 +53,10 @@
 - The Weibull survival function $S(t) = P(T > t) = \exp(-(t/\lambda)^\rho)$ captures changing hazard rates over time ($\rho > 1$ represents "wear-out" or ongoing depletion).
 - The conditional probability of replenishment in the upcoming time window $\Delta t_{\text{window}}$ given survival up to time $t$ is:
   $$P(T \le t + \Delta t_{\text{window}} \mid T > t) = 1 - \frac{S(t + \Delta t_{\text{window}})}{S(t)}$$
+
+## Step 11: Calibration & Walk-Forward Evaluation (Brier Score)
+- Classification accuracy cannot evaluate probabilities (a model outputting $0.51$ vs $0.99$ shouldn't be scored equally).
+- The **Brier Score** $\text{BS} = \frac{1}{N}\sum (p_i - y_i)^2$ is a strictly proper scoring rule where $0.0$ is perfect and an uninformed $50/50$ coin flip scores $0.25$.
+- In our sequential walk-forward backtest (where humans declared $2.0\text{ days}$ but true consumption was $3.5\text{ days}$):
+  - Declared baseline performed poorly ($\text{BS} = 0.2692$) because it constantly triggered prematurely.
+  - Bayesian NIG achieved the highest predictive accuracy ($\text{BS} = 0.0535$) by rapidly correcting the human bias.
