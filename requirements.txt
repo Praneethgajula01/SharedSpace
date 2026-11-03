@@ -10,7 +10,10 @@ scikit-learn>=1.3.0
 SQLAlchemy>=2.0.0
 python-dotenv>=1.0.0
 
-# Web UI & Visualization
+# Web API & UI
+fastapi>=0.110.0
+uvicorn>=0.28.0
+httpx>=0.27.0
 streamlit>=1.30.0
 plotly>=5.18.0
 

@@ -1,128 +1,164 @@
 # SharedSpace 🛒🥛
 
-**Intelligent Shared-Living Management & Automated Grocery Replenishment**
+**Intelligent Shared-Living Management & Automated Grocery Replenishment for Hostels & Roommate Gangs**
 
-SharedSpace replaces rigid calendar timers with an adaptive, probability-driven replenishment engine for hostels and shared apartments.
-
----
-
-## 1. The Core Idea
-
-Hostellers and roommates consume the same daily staples repeatedly (milk, bread, eggs, drinking water cans). 
-
-- **The Problem**: Fixed schedules (e.g. *"buy milk every 2 days"*) fail because consumption is inherently stochastic. Exam weeks double coffee intake, weekend trips drop demand to zero, and flatmates forget who bought what.
-- **The SharedSpace Solution**: 
-  - Roommates join a **Gang** (room group, floor wing, mess club).
-  - Members add recurring **Items** with an initial rough estimate (e.g. *"milk every 2 days"*). This declared frequency is treated strictly as an initial **Bayesian prior**, not an inflexible rule.
-  - The system observes actual purchase timestamps and continuously calculates $P(\text{need now})$.
-  - When $P(\text{need})$ crosses an annoyance-vs-utility threshold, it broadcasts a lightweight alert: *"Milk is likely empty. Book it?"*
-  - **First-Decisive Action**: If *any one* flatmate taps **Yes**, the order is booked (mocked) and the expense is evenly split.
-  - Every action—**Yes**, **No**, **Snooze**, or **Ignore**—acts as direct feedback that teaches the system when to ask, what to ask, and how often.
+SharedSpace replaces rigid subscription timers with an autonomous, probability-driven grocery replenishment and bill-splitting system built specifically for hostellers and roommate groups (**Gangs**).
 
 ---
 
-## 2. Statistical & Machine Learning Architecture
+## 1. The Core Problem & Solution
 
-SharedSpace focuses on practical applied statistics and survival analysis rather than naive rule engines:
+Hostellers and roommates share the same recurring staples (milk, bread, eggs, coffee, drinking water cans), which leads to four constant problems:
+1. **Unpredictable Stockouts**: Fixed timers (*"buy milk every 2 days"*) fail because human consumption fluctuates wildly between exam weeks and weekends.
+2. **Double-Buying & Group Friction**: Either two roommates buy the same item on the way back, or nobody buys it assuming someone else did.
+3. **Alert Fatigue**: Apps that spam notifications get muted.
+4. **Messy Bill Splits**: Tracking who owes whom after dozens of shared grocery runs creates circular debt confusion.
 
-```
-[Declared Prior Schedule] + [Observed Purchase History]
-                        │
-                        ▼
-           1. Inter-Purchase Need Model
-           P(need now | days elapsed, history, prior)
-           - Continuous Gamma intervals (non-negative, right-skewed)
-           - Bayesian Normal-Inverse-Gamma updating on log-intervals
-           - Weibull Survival Analysis with right-censoring
-                        │
-                        ▼
-           2. Response Model P(Yes | features)
-           - Beta-Binomial per user-item
-           - Logistic regression on prompt timing & elapsed time
-                        │
-                        ▼
-           3. Economic Decision Rule
-           Ask only if: P(need) * Benefit - (1 - P(need)) * Annoyance > 0
-           Threshold: τ* = Annoyance / (Annoyance + Benefit)
-           - Cooldown timers & Thompson sampling exploration
-           - CUSUM filter for detecting lifestyle drift (e.g. exams)
-                        │
-                        ▼
-           4. Booking & Feedback Loop
-           Mock API booking -> Expense split -> Feedback updates priors
-```
-
-### Key Statistical Techniques
-1. **Gamma Interval Modeling**:
-   Inter-purchase intervals $T$ must be strictly positive ($T > 0$) and are right-skewed. We model them using continuous Gamma distributions $\text{Gamma}(k, \theta)$ parameterized from empirical moments ($\mu, \sigma$).
-2. **Bayesian Conjugate Priors**:
-   We model $\log(T)$ with a Normal-Inverse-Gamma prior. When purchase history is sparse (e.g. first week), the system leans on the human's declared prior. As purchases accumulate, empirical evidence gracefully overwhelms the prior.
-3. **Survival Analysis & Censoring**:
-   The current open interval (days elapsed since last purchase without an event yet) is a **right-censored** observation. We use Weibull hazard models via `lifelines` to compute the conditional probability $P(T \le t + \Delta t \mid T > t)$.
-4. **Logistic Depletion & User Feedback**:
-   Roommate acceptance is modeled via logistic response curves centered at the true depletion point, transitioning from rejections when prompted prematurely to high acceptance when stock is genuinely depleted.
-5. **Habit Drift (CUSUM)**:
-   A Cumulative Sum control chart monitors residual purchase gaps to flag regime shifts (e.g., permanent consumption increases during winter or exams).
+### How SharedSpace Solves It:
+- **Gangs & Declared Priors**: Roommates form a **Gang**, add their members, and register shared groceries with an initial estimate (e.g., *"Milk usually lasts 3 days"*). This estimate acts strictly as a **Bayesian Prior**, not a static rule.
+- **Silent Background Learning**: An autonomous background scanner continuously tracks elapsed time and updates depletion probability $P(\text{need now})$ using actual purchase intervals while keeping all complex math completely invisible to the user.
+- **Shared Order Requests (`Order Milk?`)**: When an item is about to run out, a single clean request pops up in the Gang's **Order Requests** tab.
+- **First-Member Approval & Zero Redundant Orders**: As soon as **any one roommate** clicks **"Yes, Order Now"**, the system atomically locks the request (`PENDING` → `ACCEPTED`), places the order on behalf of the Gang (`#SS-ORD-xxxxx`), blocks duplicate orders from other roommates, and automatically splits the bill equally across the Gang.
 
 ---
 
-## 3. Tech Stack
-
-- **Statistical Modeling & ML**: `numpy`, `scipy`, `pandas`, `statsmodels`, `lifelines`, `scikit-learn`
-- **Database & Persistence**: `SQLAlchemy 2.0` with `python-dotenv`
-  - Zero-setup local development: **SQLite** (with foreign key PRAGMA enforcement)
-  - Production / Cloud: **PostgreSQL** (Supabase / Neon compatible via `DATABASE_URL`)
-- **Testing**: `pytest` using hermetic in-memory SQLite fixtures (`sqlite:///:memory:`)
-- **Web Interface & Visualizations**: `Streamlit` and `Plotly`
-
----
-
-## 4. Repository Structure
+## 2. System Architecture
 
 ```text
-sharedspace/
-├── core/
-│   ├── db.py                   # SQLAlchemy schema, foreign keys, session context
-│   ├── gangs.py                # Users, gangs, memberships, and purchase history CRUD
-│   ├── requests.py             # Request state machine (PENDING -> ACCEPTED/REJECTED/EXPIRED)
-│   ├── simulator.py            # Synthetic purchase generator via Gamma distributions
-│   ├── simulation_dynamics.py  # Habit drift, weekend demand, and logistic roommate responses
-│   ├── need_model.py           # (Upcoming) Bayesian intervals & Weibull survival
-│   ├── response_model.py       # (Upcoming) Beta-Binomial & logistic response model
-│   ├── decision.py             # (Upcoming) Cost-benefit thresholds, cooldowns, CUSUM drift
-│   ├── booking.py              # (Upcoming) Mock grocery booking API
-│   └── expenses.py             # (Upcoming) Split ledger & debt resolution
-├── tests/
-│   └── test_foundation.py      # Integration tests with in-memory SQLite
-├── notebooks/                  # Model evaluation, calibration & ablations
-├── pages/                      # Multi-page Streamlit application
-├── LEARNING_NOTES.md           # Progressive concept explanations
-├── PROGRESS.md                 # Step-by-step roadmap checklist
-├── PROJECT_BRIEF.md            # Original project requirements
-├── .env.example                # Database URL template
-└── requirements.txt            # Pinned dependencies
+┌─────────────────────────────────────────────────────────────────────────┐
+│                  REACT FRONTEND (Vite · Port 5173)                      │
+│  Student Dark-Glass UI (Login → My Gangs → Gang Workspace)              │
+│   ├── Order Requests Tab   (Approve / Remind Later / We Still Have It)  │
+│   ├── Groceries & Roommates (Stock status badges, Offline buy logger)   │
+│   └── Split Bills Tab       (Net balances & minimum debt settlements)   │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │ REST / JSON (Axios)
+                               ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                 FASTAPI BACKEND (Uvicorn · Port 8000)                   │
+│  • Autonomous Background Scanner (runs every 30s across all Gangs)      │
+│  • /gangs      → Gang creation, roommate enrollment, item registration  │
+│  • /requests   → Order request state machine, 0-duplicate lock, receipt │
+│  • /items      → Real-time depletion estimation & offline buy logging   │
+│  • /expenses   → Equal cost splitting & greedy bilateral settlements    │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                STATISTICAL & MACHINE LEARNING ENGINE                    │
+│  1. Bayesian Normal-Inverse-Gamma (NIG) Model (Student-t predictive)    │
+│  2. Weibull Survival Analysis (Right-censored open interval hazard)     │
+│  3. Economic Cost-Benefit Gate (τ* = Annoyance / (Annoyance + Benefit)) │
+│  4. Thompson Sampling Multi-Armed Bandit (Adaptive threshold tuning)    │
+│  5. Two-Sided Page's CUSUM Filter (Habit drift & regime shift detection)│
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 5. Quickstart
+## 3. Statistical & ML Pipeline (Under the Hood)
 
-### Setup Environment
+| Module | File | Purpose |
+|---|---|---|
+| **Baseline Heuristics** | `core/need_model.py` | Declared schedule baseline $\min(1, \Delta t / D)$ and rolling-window average. |
+| **Bayesian NIG Model** | `core/bayesian_model.py` | Conjugate Normal-Inverse-Gamma update on log-intervals $Y = \ln(T)$ with posterior predictive Student-$t$ CDF (**Best Walk-Forward Brier Score: `0.0535`** vs `0.2692` baseline). |
+| **Weibull Survival** | `core/survival_model.py` | Parametric survival curve $S(t)$ treating open elapsed intervals as right-censored observations ($E=0$). |
+| **Response Model** | `core/response_model.py` | Beta-Binomial conjugate smoothing + L2 regularized logistic regression for roommate acceptance probability. |
+| **Economic Decision Gate** | `core/decision.py` | Utility threshold $\tau^* = \frac{C}{C + B}$ paired with a cooldown timer to prevent notification spam. |
+| **Thompson Bandit** | `core/bandit.py` | Multi-armed bandit over candidate thresholds $\tau \in \{0.20, 0.35, 0.50, 0.65, 0.80\}$ using Beta posteriors. |
+| **CUSUM Drift Detector** | `core/drift.py` | Two-sided Page's CUSUM control chart detecting consumption acceleration (exam weeks) or slowdown (vacations). |
+| **Booking & Debt Ledger** | `core/booking.py`, `core/expenses.py` | Mock quick-commerce order execution (`#SS-ORD-xxxxx`), equal split calculation, and minimum-transfer debt simplification. |
+
+---
+
+## 4. Tech Stack
+
+- **Frontend**: `React 19`, `Vite`, `React Router v7`, `Axios`, Custom Dark-Glass CSS Design System (`Plus Jakarta Sans`)
+- **Backend API**: `FastAPI`, `Uvicorn`, `Pydantic v2`, `asyncio` background task runner
+- **Statistical & ML Engine**: `numpy`, `scipy`, `pandas`, `statsmodels`, `lifelines`, `scikit-learn`
+- **Database & ORM**: `SQLAlchemy 2.0` (`SQLite` with `PRAGMA foreign_keys=ON` for local dev; `PostgreSQL` ready via `DATABASE_URL`)
+- **Testing**: `pytest` + `FastAPI TestClient` (unit + end-to-end integration tests)
+
+---
+
+## 5. Repository Structure
+
+```text
+SharedSpace/
+├── api/
+│   ├── main.py                 # FastAPI app, CORS, DB lifespan, 30s autonomous scanner
+│   └── routers/
+│       ├── gangs.py            # POST /gangs, GET /gangs/{id}, add members & items
+│       ├── requests.py         # Order requests, YES/NO/SNOOZE lock, receipts, bandit
+│       ├── items.py            # Per-item Bayesian/Weibull stats, survival curve, purchases
+│       └── expenses.py         # Net balances & simplified bilateral debt settlements
+├── frontend/
+│   ├── src/
+│   │   ├── api/client.js       # Central Axios API client
+│   │   ├── pages/
+│   │   │   ├── Login.jsx       # Passwordless student sign-in portal
+│   │   │   ├── GangList.jsx    # My Gangs directory & Join/Create workspace
+│   │   │   └── GangDashboard.jsx # Main Gang workspace (Requests, Groceries, Split Bills)
+│   │   ├── components/
+│   │   │   ├── RequestCard.jsx    # Clean "Order {Item}?" prompt & order receipt card
+│   │   │   ├── ItemHealthCard.jsx # Grocery status card (Stocked / Running Low / Almost Empty)
+│   │   │   ├── ExpenseLedger.jsx  # Net balances & "How to Settle Up" view
+│   │   │   └── SurvivalChart.jsx  # Weibull survival curve S(t) SVG visualization
+│   │   └── index.css           # Student dark-glass design system
+│   └── package.json
+├── core/
+│   ├── db.py                   # SQLAlchemy ORM models (User, Gang, Membership, Item, PurchaseRequest)
+│   ├── gangs.py                # Gang, member, item, and purchase CRUD operations
+│   ├── requests.py             # First-decisive-response state machine & expiration
+│   ├── simulator.py            # Gamma distribution synthetic gang simulator
+│   ├── simulation_dynamics.py  # Drift, weekend multipliers, and user response simulation
+│   ├── need_model.py           # Baseline schedule & rolling average heuristics
+│   ├── bayesian_model.py       # Conjugate Normal-Inverse-Gamma need model
+│   ├── survival_model.py       # Weibull survival analysis with right-censoring
+│   ├── evaluation.py           # Walk-forward backtesting, Brier score, log-loss, calibration
+│   ├── response_model.py       # Beta-Binomial & logistic acceptance model
+│   ├── decision.py             # Cost-benefit threshold & cooldown gating
+│   ├── bandit.py               # Thompson Sampling threshold bandit
+│   ├── drift.py                # Two-sided CUSUM habit drift detector
+│   ├── booking.py              # Mock instant grocery order booking API
+│   └── expenses.py             # Equal expense splitting & debt simplification algorithm
+├── tests/
+│   ├── test_foundation.py      # Database, ORM, and state machine unit tests
+│   └── test_api_e2e.py         # Full end-to-end API & 0-duplicate order workflow test
+├── LEARNING_NOTES.md           # Step-by-step mathematical & architectural notes
+├── PROGRESS.md                 # Project milestone checklist (Steps 1–22 completed)
+└── requirements.txt            # Python dependencies
+```
+
+---
+
+## 6. Quickstart (Run Full Stack Locally)
+
+### 1. Clone & Install Backend Dependencies
 ```bash
-# Clone the repository
 git clone https://github.com/Praneethgajula01/SharedSpace.git
 cd SharedSpace
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .\.venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
+pip install fastapi uvicorn httpx
 ```
 
-### Run Tests
+### 2. Start the FastAPI Backend (Port 8000)
 ```bash
-pytest -v tests/test_foundation.py
+python -m uvicorn api.main:app --port 8000 --reload
 ```
+- **API Server**: `http://localhost:8000`
+- **Interactive Swagger Docs**: `http://localhost:8000/docs`
 
+### 3. Start the React Frontend (Port 5173)
+Open a second terminal:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- **Web App**: `http://localhost:5173`
+
+### 4. Run Automated Test Suite
+```bash
+pytest -v tests/
+```
