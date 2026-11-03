@@ -96,3 +96,10 @@
   2. **Alert Inbox**: Displays pending alerts with real-time need probabilities; one-click "Book It!" confirms the order, logs the purchase, and updates the group debt.
   3. **Item Health Cards**: Live Bayesian probability meters comparing $P(\text{need now})$ against the economic threshold $\tau^*$.
   4. **Expense Ledger**: Real-time net debt visualization and simplified settlement recommendations.
+
+## Step 18: FastAPI Backend Entry-Point
+- FastAPI turns Python functions into HTTP endpoints using decorators like `@app.get("/health")`.
+- The `lifespan` context manager (replacing old `@app.on_event`) runs `init_db()` once at startup, ensuring all SQLite tables exist before any request arrives.
+- CORS (Cross-Origin Resource Sharing) is a browser security rule: without `CORSMiddleware` whitelisting `localhost:5173`, the React app would be blocked from calling our API.
+- `/health` is a zero-dependency sanity endpoint — hit it to confirm the server is up; React can poll it on load to show a "connected" indicator.
+- `uvicorn api.main:app --reload` starts the server and hot-reloads on file save, making development fast.
