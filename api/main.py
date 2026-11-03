@@ -9,14 +9,35 @@ Responsibilities:
   - Include routers (gangs, items, requests, expenses) as we build them step by step
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import our existing DB initialiser so tables are ready on startup
-from core.db import init_db
+from core.db import init_db, get_db_session, Gang
 from api.routers import gangs as gangs_router
+from api.routers import requests as requests_router
+from api.routers import items as items_router
+from api.routers import expenses as expenses_router
+
+
+async def _autonomous_bayesian_scanner():
+    """
+    Background loop that automatically scans all gangs every 30 seconds.
+    If any item's P(need) crosses the optimal threshold, it creates a PENDING
+    request so it pops up automatically in the Gang's Requests inbox.
+    """
+    while True:
+        try:
+            with get_db_session() as session:
+                all_gangs = session.query(Gang).all()
+                for g in all_gangs:
+                    requests_router.scan_gang_items(session, g.id)
+        except Exception:
+            pass
+        await asyncio.sleep(30)
 
 
 # ---------------------------------------------------------------------------
@@ -31,7 +52,9 @@ async def lifespan(app: FastAPI):
     # Create all SQLAlchemy tables (no-op if they already exist)
     init_db()
     print("[OK] Database initialised")
+    scanner_task = asyncio.create_task(_autonomous_bayesian_scanner())
     yield
+    scanner_task.cancel()
     print("[BYE] SharedSpace API shutting down")
 
 
@@ -93,4 +116,7 @@ def root():
 # Routers — added one step at a time
 # ---------------------------------------------------------------------------
 app.include_router(gangs_router.router, prefix="/gangs")
+app.include_router(requests_router.router, prefix="/gangs")
+app.include_router(items_router.router, prefix="/gangs")
+app.include_router(expenses_router.router, prefix="/gangs")
 

@@ -30,6 +30,6 @@
 - [x] **Step 17: Streamlit Prototype** (`app.py`) — superseded by React+FastAPI
 - [x] **Step 18: FastAPI Backend Entry-Point** (`api/main.py`) — CORS, lifespan DB init, /health
 - [x] **Step 19: FastAPI Routers** (gangs, items, requests, expenses endpoints)
-- [ ] **Step 20: React Frontend** (Vite scaffold, Gang dashboard, Alert Inbox)
-- [ ] **Step 21: Visualizations** (Survival, CUSUM, Calibration — Plotly in React)
-- [ ] **Step 22: End-to-End Integration Tests**
+- [x] **Step 20: React Frontend** (Vite scaffold, Gang dashboard, Alert Inbox)
+- [x] **Step 21: Visualizations** (Survival curve S(t) chart in React)
+- [x] **Step 22: End-to-End Integration Tests** (`tests/test_api_e2e.py`)

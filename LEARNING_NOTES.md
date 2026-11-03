@@ -110,3 +110,8 @@
 - `response_model=GangOut` tells FastAPI which fields to serialise into the JSON response; extra ORM fields (like `created_at`) are silently excluded, which is good for security and clean APIs.
 - The "find-or-create user by email" pattern means the frontend only needs to send a name+email — the backend is idempotent and won't duplicate accounts.
 - We added a `price` column to the `Item` model (and deleted + recreated the local SQLite DB); in production this would be a proper Alembic migration.
+
+## Steps 20–21: Full FastAPI + React Frontend & Survival Visualization
+- Completed `api/routers/requests.py`, `api/routers/items.py`, and `api/routers/expenses.py` to expose the Bayesian NIG need model, Weibull survival curve $S(t)$, state machine transitions, and debt simplification over REST.
+- Built the React SPA (`frontend/`) with Vite, React Router, and Axios (`client.js`) connecting to `http://localhost:8000`.
+- Created `GangDashboard.jsx` with four tabs: **Alert Inbox** (`RequestCard.jsx`), **Items & Priors** (`ItemHealthCard.jsx`), **Expense Ledger** (`ExpenseLedger.jsx`), and **Survival Analytics** (`SurvivalChart.jsx`).
