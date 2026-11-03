@@ -89,3 +89,10 @@
 - Once a purchase request is accepted by any roommate, the system mocks an instant order with an external delivery service (Blinkit/Zepto), simulating order IDs, delivery windows, and small price variations.
 - Order costs are split equally across all gang members, maintaining a running debt ledger.
 - **Debt Simplification Algorithm**: Resolves multi-party IOUs into minimal bilateral payments so roommates settle balances cleanly (e.g. Rohan owes Rs 50 total $\implies$ Rohan pays Arjun Rs 40 and Kabir Rs 10).
+
+## Step 17: Interactive Streamlit UI & End-to-End Loop
+- Built the interactive web interface in `app.py` connecting all core layers into a cohesive user experience:
+  1. **Roommate Switcher**: Sidebar selector to simulate actions as Arjun, Kabir, or Rohan.
+  2. **Alert Inbox**: Displays pending alerts with real-time need probabilities; one-click "Book It!" confirms the order, logs the purchase, and updates the group debt.
+  3. **Item Health Cards**: Live Bayesian probability meters comparing $P(\text{need now})$ against the economic threshold $\tau^*$.
+  4. **Expense Ledger**: Real-time net debt visualization and simplified settlement recommendations.
