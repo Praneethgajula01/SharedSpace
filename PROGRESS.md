@@ -29,7 +29,7 @@
 - [x] **Step 16: Mock Booking API & Expense Splitting** (`core/booking.py`, `core/expenses.py`)
 - [x] **Step 17: Streamlit Prototype** (`app.py`) — superseded by React+FastAPI
 - [x] **Step 18: FastAPI Backend Entry-Point** (`api/main.py`) — CORS, lifespan DB init, /health
-- [ ] **Step 19: FastAPI Routers** (gangs, items, requests, expenses endpoints)
+- [x] **Step 19: FastAPI Routers** (gangs, items, requests, expenses endpoints)
 - [ ] **Step 20: React Frontend** (Vite scaffold, Gang dashboard, Alert Inbox)
 - [ ] **Step 21: Visualizations** (Survival, CUSUM, Calibration — Plotly in React)
 - [ ] **Step 22: End-to-End Integration Tests**

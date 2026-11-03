@@ -49,11 +49,13 @@ def add_item_to_gang(
     gang_id: int,
     name: str,
     declared_interval_days: float,
-    unit: str = "unit"
+    unit: str = "unit",
+    price: float = 0.0,
 ) -> Item:
     """
     Register a recurring grocery item under a gang.
     declared_interval_days represents the group's initial estimate of how often it is needed.
+    price is the estimated cost per purchase, used for expense splitting.
     """
     if declared_interval_days <= 0:
         raise ValueError("Declared interval must be greater than 0 days.")
@@ -62,7 +64,8 @@ def add_item_to_gang(
         gang_id=gang_id,
         name=name.strip(),
         declared_interval_days=float(declared_interval_days),
-        unit=unit.strip()
+        unit=unit.strip(),
+        price=float(price),
     )
     session.add(item)
     session.flush()

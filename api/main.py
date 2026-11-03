@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Import our existing DB initialiser so tables are ready on startup
 from core.db import init_db
+from api.routers import gangs as gangs_router
 
 
 # ---------------------------------------------------------------------------
@@ -29,9 +30,9 @@ async def lifespan(app: FastAPI):
     """
     # Create all SQLAlchemy tables (no-op if they already exist)
     init_db()
-    print("✅ Database initialised")
+    print("[OK] Database initialised")
     yield
-    print("👋 SharedSpace API shutting down")
+    print("[BYE] SharedSpace API shutting down")
 
 
 # ---------------------------------------------------------------------------
@@ -86,3 +87,10 @@ def root():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+# ---------------------------------------------------------------------------
+# Routers — added one step at a time
+# ---------------------------------------------------------------------------
+app.include_router(gangs_router.router, prefix="/gangs")
+

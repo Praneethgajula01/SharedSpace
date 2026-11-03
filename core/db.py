@@ -125,6 +125,7 @@ class Item(Base):
     name = Column(String(100), nullable=False)
     declared_interval_days = Column(Float, nullable=False)  # Prior frequency, e.g. 2.0 days
     unit = Column(String(50), default="unit", nullable=False)  # e.g. 'pack', 'liter', 'kg'
+    price = Column(Float, default=0.0, nullable=False)  # Estimated cost per purchase for expense splitting
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships

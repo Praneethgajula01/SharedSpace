@@ -103,3 +103,10 @@
 - CORS (Cross-Origin Resource Sharing) is a browser security rule: without `CORSMiddleware` whitelisting `localhost:5173`, the React app would be blocked from calling our API.
 - `/health` is a zero-dependency sanity endpoint — hit it to confirm the server is up; React can poll it on load to show a "connected" indicator.
 - `uvicorn api.main:app --reload` starts the server and hot-reloads on file save, making development fast.
+
+## Step 19: FastAPI Gang Routers (REST Endpoints)
+- An `APIRouter` is a sub-app with its own URL prefix; `app.include_router(router, prefix="/gangs")` mounts it so all its routes appear under `/gangs`.
+- Pydantic `BaseModel` classes act as automatic request validators — if a required field is missing or the wrong type, FastAPI returns a 422 error before our code even runs, so we never need to write manual input checks.
+- `response_model=GangOut` tells FastAPI which fields to serialise into the JSON response; extra ORM fields (like `created_at`) are silently excluded, which is good for security and clean APIs.
+- The "find-or-create user by email" pattern means the frontend only needs to send a name+email — the backend is idempotent and won't duplicate accounts.
+- We added a `price` column to the `Item` model (and deleted + recreated the local SQLite DB); in production this would be a proper Alembic migration.
