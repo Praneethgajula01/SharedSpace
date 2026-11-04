@@ -66,6 +66,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     email = Column(String(120), unique=True, nullable=False, index=True)
+    password_hash = Column(String(256), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
@@ -238,5 +239,12 @@ def get_db_session() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    """Create all tables registered with Base metadata."""
+    """Create all tables registered with Base metadata and ensure schema upgrades."""
     Base.metadata.create_all(bind=engine)
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(256)"))
+            conn.commit()
+        except Exception:
+            pass

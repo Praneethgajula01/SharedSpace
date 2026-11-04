@@ -1,4 +1,4 @@
-// src/pages/GangDashboard.jsx — Professional Gang Workspace
+// src/pages/GangDashboard.jsx — Authenticated Gang Workspace (Strict User Identity)
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -25,7 +25,6 @@ export default function GangDashboard() {
   const [tab, setTab] = useState("requests"); // 'requests' | 'items' | 'expenses'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedMemberId, setSelectedMemberId] = useState(null);
 
   // Add Member form
   const [memberName, setMemberName] = useState("");
@@ -40,11 +39,13 @@ export default function GangDashboard() {
   const [itemMsg, setItemMsg] = useState("");
 
   const loadData = useCallback(async () => {
+    if (!user?.id) return;
     try {
+      // First verify user is a member of this gang (raises 403 if not)
+      const gRes = await getGang(gangId, user.id);
       await checkAndTrigger(gangId).catch(() => {});
 
-      const [gRes, rRes, hRes] = await Promise.all([
-        getGang(gangId),
+      const [rRes, hRes] = await Promise.all([
         getActiveRequests(gangId),
         getRequestHistory(gangId),
       ]);
@@ -52,20 +53,12 @@ export default function GangDashboard() {
       setRequests(rRes.data);
       setHistory(hRes.data);
       setError("");
-
-      setSelectedMemberId((prev) => {
-        if (prev && gRes.data.members.some((m) => m.id === prev)) return prev;
-        const match = gRes.data.members.find(
-          (m) => m.email.toLowerCase() === user?.email?.toLowerCase()
-        );
-        return match ? match.id : gRes.data.members[0]?.id || null;
-      });
     } catch (err) {
       setError(err.response?.data?.detail || "Could not load gang.");
     } finally {
       setLoading(false);
     }
-  }, [gangId, user?.email]);
+  }, [gangId, user?.id]);
 
   useEffect(() => {
     loadData();
@@ -73,9 +66,9 @@ export default function GangDashboard() {
     return () => clearInterval(timer);
   }, [loadData]);
 
+  // Authenticated user's membership object
   const actingMember =
-    gang?.members?.find((m) => m.id === Number(selectedMemberId)) ||
-    gang?.members?.[0];
+    gang?.members?.find((m) => m.id === user?.id) || user;
 
   async function handleAddMember(e) {
     e.preventDefault();
@@ -85,7 +78,7 @@ export default function GangDashboard() {
       await addMember(gangId, memberName, memberEmail);
       setMemberName("");
       setMemberEmail("");
-      setMemberMsg("Roommate added");
+      setMemberMsg("Roommate added! They will see this Gang when they log in.");
       loadData();
     } catch (err) {
       setMemberMsg(err.response?.data?.detail || "Error adding roommate.");
@@ -112,6 +105,12 @@ export default function GangDashboard() {
     }
   }
 
+  function handleLogout() {
+    localStorage.removeItem("ss_user");
+    localStorage.removeItem("ss_gangs");
+    navigate("/");
+  }
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: 80 }}>
@@ -128,7 +127,7 @@ export default function GangDashboard() {
       >
         <h2 style={{ fontSize: 18, fontWeight: 600 }}>{error || "Gang not found"}</h2>
         <button className="btn-primary mt-4" onClick={() => navigate("/gangs")}>
-          ← Switch Gang
+          ← Back to My Gangs
         </button>
       </div>
     );
@@ -141,41 +140,30 @@ export default function GangDashboard() {
         <div style={styles.navContainer}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={styles.brandMark}>S</div>
-            <span style={{ fontWeight: 600, fontSize: 15 }}>SharedSpace</span>
+            <span style={{ fontWeight: 700, fontSize: 15 }}>SharedSpace</span>
             <span style={{ color: "var(--border-strong)" }}>/</span>
-            <span style={{ fontWeight: 500, color: "var(--text-secondary)" }}>
+            <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>
               {gang.name}
             </span>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                Logged in as:
-              </span>
-              <select
-                value={actingMember?.id || ""}
-                onChange={(e) => setSelectedMemberId(Number(e.target.value))}
-                style={{
-                  width: "auto",
-                  minWidth: 140,
-                  padding: "6px 10px",
-                  fontWeight: 500,
-                }}
-              >
-                {gang.members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <span style={{ fontSize: 13, color: "var(--muted)" }}>
+              Logged in as <strong style={{ color: "var(--text)" }}>{user?.name}</strong> ({user?.email})
+            </span>
             <button
               className="btn-ghost"
               onClick={() => navigate("/gangs")}
               style={{ padding: "6px 12px" }}
             >
               Switch Gang
+            </button>
+            <button
+              className="btn-ghost"
+              onClick={handleLogout}
+              style={{ padding: "6px 12px" }}
+            >
+              Sign Out
             </button>
           </div>
         </div>
@@ -186,7 +174,7 @@ export default function GangDashboard() {
         {/* Workspace Header */}
         <div style={styles.headerBlock}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em" }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em" }}>
               {gang.name}
             </h1>
             <p style={{ color: "var(--muted)", fontSize: 13.5, marginTop: 2 }}>
@@ -280,7 +268,7 @@ export default function GangDashboard() {
             <div style={styles.formsGrid}>
               {/* Add Shared Grocery */}
               <div className="card">
-                <h3 style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 4 }}>
+                <h3 style={{ fontSize: 15.5, fontWeight: 700, marginBottom: 4 }}>
                   Add Shared Grocery
                 </h3>
                 <p style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 16 }}>
@@ -338,11 +326,11 @@ export default function GangDashboard() {
 
               {/* Add Roommate */}
               <div className="card">
-                <h3 style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 4 }}>
+                <h3 style={{ fontSize: 15.5, fontWeight: 700, marginBottom: 4 }}>
                   Add Roommate
                 </h3>
                 <p style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 16 }}>
-                  Enrol a roommate to approve orders and share expenses.
+                  Enrol a roommate by email. This Gang will automatically appear in their account.
                 </p>
                 <form
                   onSubmit={handleAddMember}

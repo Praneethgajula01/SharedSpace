@@ -1,26 +1,37 @@
-// src/pages/GangList.jsx — Vibrant Dark-Glass Gang Directory
+// src/pages/GangList.jsx — Database-Backed Personal Gang Directory (Strict Account Isolation)
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { createGang } from "../api/client";
+import { getUserGangs, createGang, joinGang } from "../api/client";
 
 export default function GangList() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("ss_user") || "null");
 
-  const [gangs, setGangs] = useState(() => {
-    return JSON.parse(localStorage.getItem("ss_gangs") || "[]");
-  });
-
+  const [gangs, setGangs] = useState([]);
+  const [fetching, setFetching] = useState(true);
   const [gangName, setGangName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [joinId, setJoinId] = useState("");
+  const [joinError, setJoinError] = useState("");
 
-  function saveGangs(updated) {
-    setGangs(updated);
-    localStorage.setItem("ss_gangs", JSON.stringify(updated));
-  }
+  const loadMyGangs = useCallback(async () => {
+    if (!user?.id) return;
+    setFetching(true);
+    try {
+      const res = await getUserGangs(user.id);
+      setGangs(res.data);
+    } catch {
+      setGangs([]);
+    } finally {
+      setFetching(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadMyGangs();
+  }, [loadMyGangs]);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -30,7 +41,6 @@ export default function GangList() {
     try {
       const res = await createGang(gangName, user.name, user.email);
       const gang = res.data;
-      saveGangs([...gangs, { id: gang.id, name: gang.name }]);
       navigate(`/gangs/${gang.id}`);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to create gang.");
@@ -39,18 +49,21 @@ export default function GangList() {
     }
   }
 
-  function handleJoin() {
+  async function handleJoin() {
     const id = parseInt(joinId);
     if (!id) return;
-    const updated = gangs.some((g) => g.id === id)
-      ? gangs
-      : [...gangs, { id, name: `Gang #${id}` }];
-    saveGangs(updated);
-    navigate(`/gangs/${id}`);
+    setJoinError("");
+    try {
+      await joinGang(id, user.id);
+      navigate(`/gangs/${id}`);
+    } catch (err) {
+      setJoinError(err.response?.data?.detail || `Could not join Gang #${id}.`);
+    }
   }
 
   function handleLogout() {
     localStorage.removeItem("ss_user");
+    localStorage.removeItem("ss_gangs");
     navigate("/");
   }
 
@@ -79,13 +92,17 @@ export default function GangList() {
             My Gangs
           </h1>
           <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>
-            Pick your roommate squad to check order requests, shared groceries, and split bills.
+            Showing only Gangs linked to your account (<strong>{user?.email}</strong>).
           </p>
         </div>
 
-        {/* Active Gangs List */}
+        {/* Authenticated User's Gangs List */}
         <div style={styles.list}>
-          {gangs.length === 0 ? (
+          {fetching ? (
+            <div style={{ textAlign: "center", padding: 40 }}>
+              <span className="spinner" />
+            </div>
+          ) : gangs.length === 0 ? (
             <div
               className="card"
               style={{
@@ -94,11 +111,18 @@ export default function GangList() {
                 padding: "44px 24px",
               }}
             >
-              <div style={{ fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
-                No Gangs connected yet
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: "var(--text)",
+                  marginBottom: 4,
+                }}
+              >
+                You aren't part of any Gang yet
               </div>
               <p style={{ fontSize: 13.5 }}>
-                Create a new Gang below or enter Gang ID #1 to join the live hostel demo.
+                Create a new Gang below, or enter a Gang ID shared by your roommate to join.
               </p>
             </div>
           ) : (
@@ -118,7 +142,8 @@ export default function GangList() {
                       {g.name}
                     </div>
                     <div style={{ color: "var(--muted)", fontSize: 12.5 }}>
-                      Gang ID #{g.id}
+                      Gang ID #{g.id} · {g.members?.length || 1} member(s) ·{" "}
+                      {g.items?.length || 0} item(s)
                     </div>
                   </div>
                 </div>
@@ -154,20 +179,21 @@ export default function GangList() {
           <div className="card">
             <h3 style={styles.cardTitle}>Join by Gang ID</h3>
             <p style={styles.cardSub}>
-              Have a Gang ID from your roommate? Enter it to jump right in.
+              Have a Gang ID from your roommate? Enter it to join and link it to your account.
             </p>
             <div style={{ display: "flex", gap: 8 }}>
               <input
                 type="number"
                 value={joinId}
                 onChange={(e) => setJoinId(e.target.value)}
-                placeholder="Enter Gang ID (try 1)"
+                placeholder="Enter Gang ID"
                 style={{ flex: 1 }}
               />
               <button className="btn-ghost" onClick={handleJoin}>
                 Join Gang
               </button>
             </div>
+            {joinError && <p className="error-msg mt-2">{joinError}</p>}
           </div>
         </div>
       </main>
@@ -211,7 +237,12 @@ const styles = {
     justifyContent: "center",
     boxShadow: "0 2px 10px rgba(139, 92, 246, 0.4)",
   },
-  brandName: { fontWeight: 800, fontSize: 16, color: "var(--text)", letterSpacing: "-0.02em" },
+  brandName: {
+    fontWeight: 800,
+    fontSize: 16,
+    color: "var(--text)",
+    letterSpacing: "-0.02em",
+  },
   wrapper: { maxWidth: 900, margin: "0 auto", padding: "36px 20px" },
   list: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 },
   gangCard: {
@@ -226,7 +257,8 @@ const styles = {
     width: 42,
     height: 42,
     borderRadius: 10,
-    background: "linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(16, 185, 129, 0.2))",
+    background:
+      "linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(16, 185, 129, 0.2))",
     border: "1px solid rgba(139, 92, 246, 0.4)",
     color: "#ffffff",
     fontWeight: 800,

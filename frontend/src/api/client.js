@@ -1,6 +1,5 @@
 // src/api/client.js
 // Central Axios client — all API calls go through here.
-// Base URL points to our FastAPI server running on port 8000.
 
 import axios from "axios";
 
@@ -9,12 +8,29 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// ── Gangs ────────────────────────────────────────────────────────────────────
+// ── Authentication ───────────────────────────────────────────────────────────
+
+export const signupUser = (name, email, password) =>
+  api.post("/auth/signup", { name, email, password });
+
+export const loginUser = (email, password) =>
+  api.post("/auth/login", { email, password });
+
+// ── Gangs (Account-Isolated) ─────────────────────────────────────────────────
+
+export const getUserGangs = (userId) =>
+  api.get(`/gangs/user/${userId}`);
 
 export const createGang = (name, creatorName, creatorEmail) =>
   api.post("/gangs", { name, creator_name: creatorName, creator_email: creatorEmail });
 
-export const getGang = (gangId) => api.get(`/gangs/${gangId}`);
+export const joinGang = (gangId, userId) =>
+  api.post(`/gangs/${gangId}/join`, { user_id: userId });
+
+export const getGang = (gangId, userId = null) =>
+  api.get(`/gangs/${gangId}`, {
+    params: userId ? { user_id: userId } : {},
+  });
 
 export const addMember = (gangId, name, email) =>
   api.post(`/gangs/${gangId}/members`, { name, email });
@@ -64,4 +80,3 @@ export const getBalances = (gangId) => api.get(`/gangs/${gangId}/balances`);
 export const getSettlements = (gangId) => api.get(`/gangs/${gangId}/settlements`);
 
 export default api;
-

@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Import our existing DB initialiser so tables are ready on startup
 from core.db import init_db, get_db_session, Gang
+from api.routers import auth as auth_router
 from api.routers import gangs as gangs_router
 from api.routers import requests as requests_router
 from api.routers import items as items_router
@@ -115,6 +116,7 @@ def root():
 # ---------------------------------------------------------------------------
 # Routers — added one step at a time
 # ---------------------------------------------------------------------------
+app.include_router(auth_router.router, prefix="/auth")
 app.include_router(gangs_router.router, prefix="/gangs")
 app.include_router(requests_router.router, prefix="/gangs")
 app.include_router(items_router.router, prefix="/gangs")

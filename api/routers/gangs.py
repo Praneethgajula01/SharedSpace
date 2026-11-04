@@ -8,11 +8,11 @@ Endpoints:
   POST /gangs/{gang_id}/items        → add a grocery item with a declared interval prior
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-from core.db import get_db_session, Gang, User
+from core.db import get_db_session, Gang, User, Membership
 from core import gangs as gang_ops
 
 router = APIRouter()
@@ -32,6 +32,10 @@ class CreateGangRequest(BaseModel):
 class AddMemberRequest(BaseModel):
     name: str = Field(..., min_length=1)
     email: str = Field(...)
+
+
+class JoinGangRequest(BaseModel):
+    user_id: int = Field(..., description="ID of the authenticated user joining this gang")
 
 
 class AddItemRequest(BaseModel):
@@ -105,13 +109,103 @@ def create_gang(body: CreateGangRequest):
 
 
 # ---------------------------------------------------------------------------
+# GET /gangs/user/{user_id} — Fetch ONLY the gangs this user belongs to
+# ---------------------------------------------------------------------------
+
+@router.get("/user/{user_id}", response_model=List[GangOut], tags=["Gangs"])
+def get_user_gangs(user_id: int):
+    """
+    Return all gangs that the specified user is a member of.
+    Ensures strict account-level isolation: a user only sees their own gangs.
+    """
+    with get_db_session() as session:
+        user_gangs = (
+            session.query(Gang)
+            .join(Membership, Membership.gang_id == Gang.id)
+            .filter(Membership.user_id == user_id)
+            .order_by(Gang.id.asc())
+            .all()
+        )
+
+        result = []
+        for g in user_gangs:
+            members = gang_ops.get_gang_members(session, g.id)
+            items = gang_ops.get_gang_items(session, g.id)
+            result.append(
+                GangOut(
+                    id=g.id,
+                    name=g.name,
+                    members=[UserOut(id=u.id, name=u.name, email=u.email) for u in members],
+                    items=[
+                        ItemOut(
+                            id=it.id,
+                            name=it.name,
+                            declared_interval_days=it.declared_interval_days,
+                            unit=it.unit,
+                            price=it.price,
+                        )
+                        for it in items
+                    ],
+                )
+            )
+        return result
+
+
+# ---------------------------------------------------------------------------
+# POST /gangs/{gang_id}/join — Join an existing gang by ID
+# ---------------------------------------------------------------------------
+
+@router.post("/{gang_id}/join", response_model=GangOut, tags=["Gangs"])
+def join_gang(gang_id: int, body: JoinGangRequest):
+    """
+    Enroll the authenticated user into an existing gang by ID.
+    """
+    with get_db_session() as session:
+        gang = session.query(Gang).filter(Gang.id == gang_id).first()
+        if not gang:
+            raise HTTPException(status_code=404, detail=f"Gang #{gang_id} does not exist.")
+
+        user = session.query(User).filter(User.id == body.user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User account not found.")
+
+        existing_membership = (
+            session.query(Membership)
+            .filter(Membership.gang_id == gang_id, Membership.user_id == user.id)
+            .first()
+        )
+        if not existing_membership:
+            gang_ops.add_member_to_gang(session, gang_id, user.id)
+            session.commit()
+
+        members = gang_ops.get_gang_members(session, gang_id)
+        items = gang_ops.get_gang_items(session, gang_id)
+        return GangOut(
+            id=gang.id,
+            name=gang.name,
+            members=[UserOut(id=u.id, name=u.name, email=u.email) for u in members],
+            items=[
+                ItemOut(
+                    id=it.id,
+                    name=it.name,
+                    declared_interval_days=it.declared_interval_days,
+                    unit=it.unit,
+                    price=it.price,
+                )
+                for it in items
+            ],
+        )
+
+
+# ---------------------------------------------------------------------------
 # GET /gangs/{gang_id} — Fetch gang details with members and items
 # ---------------------------------------------------------------------------
 
 @router.get("/{gang_id}", response_model=GangOut, tags=["Gangs"])
-def get_gang(gang_id: int):
+def get_gang(gang_id: int, user_id: Optional[int] = Query(None)):
     """
     Return gang details including all current members and tracked grocery items.
+    If user_id is provided, verifies that the user is actually a member of this gang.
     """
     with get_db_session() as session:
         gang = session.query(Gang).filter(Gang.id == gang_id).first()
@@ -119,6 +213,12 @@ def get_gang(gang_id: int):
             raise HTTPException(status_code=404, detail=f"Gang {gang_id} not found")
 
         members = gang_ops.get_gang_members(session, gang_id)
+        if user_id is not None and not any(m.id == user_id for m in members):
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: You are not a member of this Gang.",
+            )
+
         items = gang_ops.get_gang_items(session, gang_id)
 
         return GangOut(

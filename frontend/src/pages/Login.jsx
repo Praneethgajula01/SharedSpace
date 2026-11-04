@@ -1,29 +1,57 @@
-// src/pages/Login.jsx — Student-Friendly Dark-Glass Sign-In Portal
+// src/pages/Login.jsx — Real Instagram-Style Log In & Sign Up Portal
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { loginUser, signupUser } from "../api/client";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState("login"); // 'login' | 'signup'
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      setError("Please enter both your name and email address.");
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter your email and password.");
       return;
     }
-    setError("");
+    if (mode === "signup" && !name.trim()) {
+      setError("Please enter your full name to sign up.");
+      return;
+    }
+
     setLoading(true);
-    localStorage.setItem(
-      "ss_user",
-      JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase() })
-    );
-    setLoading(false);
-    navigate("/gangs");
+    try {
+      let res;
+      if (mode === "signup") {
+        res = await signupUser(name.trim(), email.trim(), password);
+      } else {
+        res = await loginUser(email.trim(), password);
+      }
+
+      // Clear any legacy localStorage gang lists and store authenticated user
+      localStorage.removeItem("ss_gangs");
+      localStorage.setItem("ss_user", JSON.stringify(res.data));
+      navigate("/gangs");
+    } catch (err) {
+      setError(
+        err.response?.data?.detail ||
+          (mode === "signup" ? "Sign up failed." : "Invalid email or password.")
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function toggleMode() {
+    setMode((prev) => (prev === "login" ? "signup" : "login"));
+    setError("");
   }
 
   return (
@@ -32,46 +60,88 @@ export default function Login() {
         <div style={styles.brandRow}>
           <div style={styles.brandMark}>S</div>
           <span style={styles.brandName}>SharedSpace</span>
-          <span className="tag tag-purple" style={{ marginLeft: "auto" }}>Hostel Edition</span>
+          <span className="tag tag-purple" style={{ marginLeft: "auto" }}>
+            Hostel Edition
+          </span>
         </div>
 
-        <h1 style={styles.title}>Jump into your Gang</h1>
+        <h1 style={styles.title}>
+          {mode === "login" ? "Log in to your account" : "Create your account"}
+        </h1>
         <p style={styles.sub}>
-          Smart grocery auto-ordering and instant bill splits for roommates.
+          {mode === "login"
+            ? "Access your personal Gangs, shared groceries, and split bills."
+            : "Sign up with your hostel email. If a roommate already added your email to a Gang, it will link automatically."}
         </p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
+          {mode === "signup" && (
+            <div>
+              <span className="label">Full Name</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Arjun Sharma"
+                autoFocus
+              />
+            </div>
+          )}
+
           <div>
-            <span className="label">Your Name</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Arjun"
-              autoFocus
-            />
-          </div>
-          <div>
-            <span className="label">College / Hostel Email</span>
+            <span className="label">Email Address</span>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="arjun@hostel.com"
+              autoFocus={mode === "login"}
             />
           </div>
+
+          <div>
+            <span className="label">Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+
           {error && <p className="error-msg">{error}</p>}
+
           <button
             className="btn-primary w-full"
             type="submit"
             disabled={loading}
             style={{ padding: "11px 16px", marginTop: 6, fontSize: 14 }}
           >
-            {loading ? <span className="spinner" /> : "Enter SharedSpace →"}
+            {loading ? (
+              <span className="spinner" />
+            ) : mode === "login" ? (
+              "Log In →"
+            ) : (
+              "Sign Up & Continue →"
+            )}
           </button>
         </form>
 
-        <div style={styles.footer}>
-          Zero passwords · Instant Gang sync
+        <div style={styles.switchBox}>
+          {mode === "login" ? (
+            <>
+              Don't have an account?{" "}
+              <button type="button" onClick={toggleMode} style={styles.linkBtn}>
+                Sign up
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{" "}
+              <button type="button" onClick={toggleMode} style={styles.linkBtn}>
+                Log in
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -136,12 +206,21 @@ const styles = {
     flexDirection: "column",
     gap: 16,
   },
-  footer: {
+  switchBox: {
     color: "var(--muted)",
-    fontSize: 12,
-    marginTop: 24,
-    paddingTop: 16,
+    fontSize: 13.5,
+    marginTop: 22,
+    paddingTop: 18,
     borderTop: "1px solid var(--border)",
     textAlign: "center",
+  },
+  linkBtn: {
+    background: "none",
+    border: "none",
+    color: "#a78bfa",
+    fontWeight: 700,
+    padding: "0 4px",
+    fontSize: 13.5,
+    cursor: "pointer",
   },
 };
