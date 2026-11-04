@@ -206,6 +206,7 @@ def record_purchase(gang_id: int, item_id: int, body: RecordPurchaseRequest):
                 raise HTTPException(status_code=400, detail="Invalid datetime format. Use ISO format.")
 
         from core.gangs import record_purchase as _record
+        from core.db import PurchaseRequest, RequestResponse
         purchase = _record(
             session,
             item_id=item_id,
@@ -213,6 +214,30 @@ def record_purchase(gang_id: int, item_id: int, body: RecordPurchaseRequest):
             price=body.price,
             buyer_id=body.buyer_id,
         )
+
+        # Auto-resolve any open PENDING order requests for this item so no one orders it again
+        if not body.purchased_at:
+            open_reqs = (
+                session.query(PurchaseRequest)
+                .filter(
+                    PurchaseRequest.item_id == item_id,
+                    PurchaseRequest.status == "PENDING",
+                )
+                .all()
+            )
+            for req in open_reqs:
+                req.status = "ACCEPTED"
+                req.resolved_at = purchased_at
+                if body.buyer_id:
+                    session.add(
+                        RequestResponse(
+                            request_id=req.id,
+                            user_id=body.buyer_id,
+                            action="YES",
+                            responded_at=purchased_at,
+                        )
+                    )
+
         session.commit()
 
         return PurchaseOut(
